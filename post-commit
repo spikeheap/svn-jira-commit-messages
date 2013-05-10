@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Arguments passed by commit
+REPOS="$1"
+TXN="$2"
+
+# Variables
+SVNLOOK=/usr/bin/svnlook
+JIRA_URL=https://jira.nmi.uk.com/rest/api/2/issue
+ISSUE_KEY_REGEX=[A-Z][A-Z0-9]+-[0-9]+
+
+#
+# Enforce a commit message >1 character
+# NOTE: Do this first or else the commit might not be successful 
+#   but other things would happen anyway!
+#
+
+# Get the commit message and grep it for at least one character
+LOGMSG=$SVNLOOK log -t "$TXN" "$REPOS" 
+
+#
+# Create a JIRA comment
+#
+
+# Figure out issue key (or many)
+readarray GREPPED < <(grep "$ISSUE_KEY_REGEX" << $LOGMSG)
+
+# For each issue, add the comment
+for key in "${GREPPED[@]}"
+do
+	curl -D- -u fred:fred -X POST --data {"body": "$LOGMSG"} -H "Content-Type: application/json" $JIRA_URL/${key}/comment	 
+done
+

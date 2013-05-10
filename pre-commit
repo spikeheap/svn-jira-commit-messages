@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# Arguments passed by commit
+REPOS="$1"
+TXN="$2"
+
+# Variables
+SVNLOOK=/usr/bin/svnlook
+
+# Get the commit message and grep it for at least one character
+LOGMSG=$SVNLOOK log -t "$TXN" "$REPOS" 
+echo $LOGMSG | grep "[a-zA-Z0-9]" > /dev/null
+
+# Bail out if the grep didn't find anything
+GREP_STATUS=$?
+if [ $GREP_STATUS -ne 0 ]
+then
+    echo "Your commit has been blocked because you didn't provide a log message" 1>&2
+    echo "Please write a log message describing the purpose of your changes and" 1>&2
+    echo "the issue key, and try committing again. See" 1>&2
+    echo "https://confluence.nmi.uk.com/display/OPS/SOP-030+Use+of+version+control+systems" 1>&2
+    echo "-- Thank you" 1>&2
+    exit 1
+fi
+exit 0
